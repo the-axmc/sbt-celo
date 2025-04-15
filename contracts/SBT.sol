@@ -64,4 +64,11 @@ contract SoulboundToken is ERC721, Ownable {
     function isApprovedForAll(address, address) public pure override returns (bool) {
         return false;
     }
+
+    /// Burn function to remove a soulbound token
+    function burn(uint256 tokenId) external onlyOwner {
+        _burn(tokenId);
+        address tokenOwner = ownerOf(tokenId);
+        hasMinted[tokenOwner] = false;  // Mark that the address no longer has the token
+    }
 }
