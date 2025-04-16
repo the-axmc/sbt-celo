@@ -10,6 +10,15 @@ contract SoulboundToken is ERC721, Ownable {
     mapping(uint256 => string) private _tokenURIs;
     mapping(address => bool) public daoSigners;
 
+    // Predefined DAO authorized wallets (initial ones)
+    address[] public authorizedDAOWallets = [
+        0x7dfaD7deD1B3351D8BA46703b47296056688c664,
+        0x476E2651BF97dE8a26e4A05a9c8e00A6EFa1390c,
+        0x357438e4Df52288a137B955E3401E9C1EAf8AF17,
+        0x2AeD14FE7bd056212cD0eD91b57a8EC5A5E33624,
+        0xc7F32185E5c15b5D9Da51d70b2816467665BA452
+    ];
+
     constructor(address initialOwner)
         ERC721("DAO Constitutional Membership", "CELOEU-SBT")
         Ownable(initialOwner)
@@ -22,7 +31,14 @@ contract SoulboundToken is ERC721, Ownable {
 
     /// Modifier to protect transfer function
     modifier onlyDAO() {
-        require(daoSigners[msg.sender], "Not authorized DAO signer");
+        bool isAuthorized = false;
+        for (uint i = 0; i < authorizedDAOWallets.length; i++) {
+            if (daoSigners[authorizedDAOWallets[i]] == true) {
+                isAuthorized = true;
+                break;
+            }
+        }
+        require(isAuthorized, "Not an authorized DAO signer");
         _;
     }
 
@@ -63,5 +79,24 @@ contract SoulboundToken is ERC721, Ownable {
 
     function isApprovedForAll(address, address) public pure override returns (bool) {
         return false;
+    }
+
+    /// Burn mechanism: Allows the token holder to burn their own token
+    function burn(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
+        _burn(tokenId);
+        hasMinted[msg.sender] = false;  // Reset mint status for the address
+    }
+
+    /// Add DAO wallet dynamically (onlyOwner can call this)
+    function addDAOWallet(address newSigner) external onlyOwner {
+        require(newSigner != address(0), "Invalid address");
+        // Check if the address is already in the list
+        for (uint i = 0; i < authorizedDAOWallets.length; i++) {
+            require(authorizedDAOWallets[i] != newSigner, "Address is already in the list");
+        }
+        // Add the new signer to the list of authorized DAO wallets
+        authorizedDAOWallets.push(newSigner);
+        daoSigners[newSigner] = true; // Mark the new wallet as a DAO signer
     }
 }
