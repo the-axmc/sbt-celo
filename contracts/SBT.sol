@@ -81,22 +81,10 @@ contract SoulboundToken is ERC721, Ownable {
         return false;
     }
 
-    /// Burn mechanism: Allows the token holder to burn their own token
-    function burn(uint256 tokenId) public {
-        require(ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
+    /// Burn function to remove a soulbound token
+    function burn(uint256 tokenId) external onlyOwner {
         _burn(tokenId);
-        hasMinted[msg.sender] = false;  // Reset mint status for the address
-    }
-
-    /// Add DAO wallet dynamically (onlyOwner can call this)
-    function addDAOWallet(address newSigner) external onlyOwner {
-        require(newSigner != address(0), "Invalid address");
-        // Check if the address is already in the list
-        for (uint i = 0; i < authorizedDAOWallets.length; i++) {
-            require(authorizedDAOWallets[i] != newSigner, "Address is already in the list");
-        }
-        // Add the new signer to the list of authorized DAO wallets
-        authorizedDAOWallets.push(newSigner);
-        daoSigners[newSigner] = true; // Mark the new wallet as a DAO signer
+        address tokenOwner = ownerOf(tokenId);
+        hasMinted[tokenOwner] = false;  // Mark that the address no longer has the token
     }
 }
